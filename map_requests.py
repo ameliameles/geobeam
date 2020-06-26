@@ -14,15 +14,10 @@
 
 """Handles requests and parsing of Google Maps API calls
 
-Leave one blank line.  The rest of this docstring should contain an
-overall description of the module or program.  Optionally, it may also
-contain a brief description of exported classes and functions and/or usage
-examples.
-
   Typical usage example:
 
-  foo = ClassFoo()
-  bar = foo.FunctionBar()
+  directions = request_directions((37.417747,-122.086086),(37.421624, -122.096472))
+  elevations = request_elevations([(37.417747,-122.086086),(37.421624, -122.096472),(37.45634, -121.046592)])
 """
 
 import googlemaps
@@ -45,7 +40,6 @@ def request_directions(start_location,end_location):
   """ 
   now = datetime.now()
   directions_response= gmaps.directions(start_location, end_location, mode="walking", departure_time=now)
-  print(directions_response)
   parsed_directions_response = parse_directions_response(directions_response)
   return parsed_directions_response
 
@@ -85,7 +79,7 @@ def parse_directions_response(directions_response):
     return (route_points, route_distances, route_durations, route_polyline)
 
   else:
-    return "no routes, pick new points"
+    raise ValueError("no routes between start and end points, try new points")
 
 def request_elevations(locations):
   """Request elevations for a list of (lat,lon) coordinates.
@@ -96,7 +90,6 @@ def request_elevations(locations):
     a list of elevation responses in the deserialized Elevation API response format in order of input locations
   """
   elevations_response= gmaps.elevation(locations)
-  print(elevations_response)
   parsed_elevations_response = parse_elevations_response(elevations_response)
   return parsed_elevations_response
 

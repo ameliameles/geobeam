@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,28 +14,23 @@
 
 """Generate a route that can be made into a User Motion File based on two locations.
 
-Leave one blank line.  The rest of this docstring should contain an
-overall description of the module or program.  Optionally, it may also
-contain a brief description of exported classes and functions and/or usage
-examples.
+Classes for Location, Route, and TimedRoute. A Route is a list of points that connect
+a user given start and end location. TimedRoute is a child class of Route and incorporates
+a user specified speed of travel and point frequency, which can be used to
+create a user motion file (10 Hz) with various simulated speeds (walking, running, biking)
 
   Typical usage example:
-
-  foo = ClassFoo()
-  bar = foo.FunctionBar()
+  user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["walking"],10)
+  user_motion.create_route()
+  user_motion.write_route("usermotiontestfile.csv")
 """
 
-import sys
 import csv
 from datetime import datetime
 import pprint
 
 from map_requests import request_directions,request_elevations
 from gps_utils import lla_to_xyz
-
-
-#average in meters per second
-TRANSPORT_SPEEDS = { "walking": 1.4, "running": 2.5, "biking": 7}
 
 class Location(object):
   """An object for a location (in the form of a set of coordinates)
@@ -197,22 +190,3 @@ class TimedRoute(Route):
 def write_to_csv(file_name,value_array):
   with open(file_name, "w") as csv_file:
     csv.writer(csv_file).writerows(value_array)
-
-def main():
-  #TODO: add user input arguments
-
-  #a 28 minute walk
-  location1 = Location(37.417747,-122.086086)
-  location2 = Location(37.421624, -122.096472)
-
-  #gives 14 points of information staright from api
-  route = Route(location1,location2)
-  route.create_route()
-  route.write_route("routetestfile.csv")
-
-  #gives 14649 points at 7 points/meter & 10 points/second
-  user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["walking"],10)
-  user_motion.create_route()
-  user_motion.write_route("usermotiontestfile.csv")
-if __name__ == '__main__':
-	sys.exit(main())
