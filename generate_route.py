@@ -37,7 +37,7 @@ from gps_utils import lla_to_xyz
 
 
 #average in meters per second
-TRANSPORT_SPEEDS = { "walking": 1.4, "running": 2, "biking": 3}
+TRANSPORT_SPEEDS = { "walking": 1.4, "running": 2.5, "biking": 7}
 
 class Location(object):
   """An object for a location (in the form of a set of coordinates)
@@ -68,7 +68,7 @@ class Location(object):
     return 'Location(%s, %s, %s)' % (self.latitude, self.longitude, self.altitude)
 
 class Route(object):
-  """An object for a route based on the input of a start and ending location
+  """An object for a route based on the input of a start and ending location.
 
   Attributes:
       start_location: a Location object for the start of the route
@@ -88,6 +88,11 @@ class Route(object):
     self.polyline = None
 
   def create_route(self):
+    """Create a route by requesting from Maps API and then adding altitudes/xyz to each point.
+
+    sets attributes for the class based on API response and then calls add_altitudes() to 
+    request elevation data for each point, and then add xyz conversion to each point
+    """
     locations,self.distances,self.durations,self.polyline = request_directions(self.start_location.get_lat_lon_tuple(),self.end_location.get_lat_lon_tuple())
     route = []
     for location in locations:
@@ -98,6 +103,10 @@ class Route(object):
     self.add_altitudes()
   
   def add_altitudes(self):
+    """Add altitudes to each point in self.route using Maps Elevation API.
+
+    sets elevation data for each point, and then adds xyz conversion from lla to each point
+    """
     locations = []
     for location in self.route:
       locations.append(location.get_lat_lon_tuple())
@@ -107,6 +116,9 @@ class Route(object):
       location.add_XYZ()
 
   def write_route(self,file_name):
+    """write route into csv with each line as x,y,z.
+
+    """
     write_array = []
     for location in self.route:
       write_array.append(location.get_xyz_tuple())
@@ -135,11 +147,19 @@ class TimedRoute(Route):
     self.upsample_route()
   
   def upsample_route(self):
+    """Upsample the TimedRoute such that the number of points aligns with the desired
+    speed and frequency.
+
+    for each consecutive set of points, the change in lat,lon,alt is divided by
+    split amongst the number of new points that need to be created so that there
+    is roughly an equal distance (1/points_per_meter) between each of the points in the 
+    upsampled route.
+    """
     points_per_meter = self.frequency/self.speed
     new_route = []
 
-    # fill 0.1-0.9s with the same location as 1.0s
-    for i in range(1, 10):
+    # fill first 10 cycles with first location
+    for i in range(10):
       new_route.append(self.route[0])
 
     for i in range(len(self.distances)):
@@ -163,6 +183,10 @@ class TimedRoute(Route):
     self.distances = [1/points_per_meter for x in range(len(new_route)-1)]
 
   def write_route(self,file_name):
+    """write route into csv with each line as time,x,y,z.
+    
+    time starts at 0.0 and time values are rounded to one decimal place
+    """
     write_array = []
     time = 0.0
     for location in self.route:
@@ -175,14 +199,18 @@ def write_to_csv(file_name,value_array):
     csv.writer(csv_file).writerows(value_array)
 
 def main():
+  #TODO: add user input arguments
+
+  #a 28 minute walk
   location1 = Location(37.417747,-122.086086)
   location2 = Location(37.421624, -122.096472)
-  '''
+
+  #gives 14 points of information staright from api
   route = Route(location1,location2)
   route.create_route()
-  route.add_altitudes()
   route.write_route("routetestfile.csv")
-  '''
+
+  #gives 14649 points at 7 points/meter & 10 points/second
   user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["walking"],10)
   user_motion.create_route()
   user_motion.write_route("usermotiontestfile.csv")

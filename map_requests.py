@@ -40,7 +40,8 @@ def request_directions(start_location,end_location):
     start_location: tuple of floats (lat, lon) for starting point
     end_location: tuple of floats (lat, lon) for ending point
   Returns:
-    a list of directions in the deserialized Maps API response format
+    a list of directions in the deserialized Maps API response format 
+    https://developers.google.com/maps/documentation/directions/intro#DirectionsResponses
   """ 
   now = datetime.now()
   directions_response= gmaps.directions(start_location, end_location, mode="walking", departure_time=now)
@@ -49,6 +50,18 @@ def request_directions(start_location,end_location):
   return parsed_directions_response
 
 def parse_directions_response(directions_response):
+  """Extract basic information relevant to route from the response.
+
+  Args:
+    directions_response: list of directions in the deserialized Maps API response format
+  Returns:
+    if a valid route is found a tuple containing:
+      a list of the (lat,lon) points on the route
+      a list of distances between those points (in meters)
+      a list of durations between those points (in seconds)
+      a string of the encoded polyline that can be plotted to show the route
+    otherwise: a message that no routes were found
+  """
   if len(directions_response) > 0:
     route_response = directions_response[0]
     route_points = []
@@ -75,7 +88,7 @@ def parse_directions_response(directions_response):
     return "no routes, pick new points"
 
 def request_elevations(locations):
-  """request elevations for a list of (lat,lon) coordinates
+  """Request elevations for a list of (lat,lon) coordinates.
 
   Args:
     locations: list of (lat,lon)
@@ -88,6 +101,13 @@ def request_elevations(locations):
   return parsed_elevations_response
 
 def parse_elevations_response(elevations_response):
+  """Extract elevation values in order from API response.
+
+  Args:
+    elevations_response: list of elevation responses in the deserialized Elevation API response format
+  Returns:
+    a list of elevations in the same order as given response
+  """
   elevations = []
   for result in elevations_response:
     elevations.append(result["elevation"])
