@@ -16,33 +16,37 @@
 
 import sys
 
-from generate_route import Location, Route, TimedRoute
+from generate_route import Location
+from generate_route import Route
+from generate_route import TimedRoute
 
-TRANSPORT_SPEEDS = { "walking": 1.4, "running": 2.5, "biking": 7}
+TRANSPORT_SPEEDS = {"walking": 1.4, "running": 2.5, "biking": 7}
+
 
 def main():
-  #a 28 minute walk
-  location1 = Location(37.417747,-122.086086)
+  # a 28 minute walk
+  location1 = Location(37.417747, -122.086086)
   location2 = Location(37.421624, -122.096472)
 
-  #gives 14 points of information straight from api
-  route = Route(location1,location2)
+  # gives 14 points of information straight from api
+  route = Route(location1, location2)
   route.create_route()
   route.write_route("routetestfile.csv")
 
-  #gives 14649 points at 7 points/meter & 10 points/second
-  user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["walking"],10)
+  # gives 14649 points at 7 points/meter & 10 points/second
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["walking"], 10)
   user_motion.create_route()
   user_motion.write_route("userwalking.csv")
 
-  #gives 9226 points at 4 points/meter & 10 points/second
-  user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["running"],10)
+  # gives 9226 points at 4 points/meter & 10 points/second
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["running"], 10)
   user_motion.create_route()
   user_motion.write_route("userrunning.csv")
 
-  #gives 3289 points at 1.4 points/meter & 10 points/second
-  user_motion = TimedRoute(location1,location2,TRANSPORT_SPEEDS["biking"],10)
+  # gives 3289 points at 1.4 points/meter & 10 points/second
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["biking"], 10)
   user_motion.create_route()
   user_motion.write_route("userbiking.csv")
-if __name__ == '__main__':
+
+if __name__ == "__main__":
   sys.exit(main())
