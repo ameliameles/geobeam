@@ -61,28 +61,16 @@ class Route():
     add_altitudes() to request elevation data for each point, and then add xyz
     conversion to each point
     """
-    result = request_directions(self.start_location.get_lat_lon_tuple(),
-                                self.end_location.get_lat_lon_tuple())
-    locations, self.distances, self.polyline = result
     route = []
-    for location in locations:
+    locations, self.distances, self.polyline = request_directions(self.start_location.get_lat_lon_tuple(), self.end_location.get_lat_lon_tuple())
+    elevations = request_elevations(locations)
+    for location, altitude in zip(locations, elevations):
       latitude = location[0]
       longitude = location[1]
-      route.append(Location(latitude, longitude))
+      route.append(Location(latitude, longitude, altitude))
     self.route = route
-    self.add_altitudes()
-
-  def add_altitudes(self):
-    """Add altitudes to each point in self.route using Maps Elevation API.
-
-    sets elevation data for each point, and then adds xyz conversion
-    from lla to each point
-    """
-    locations = [location.get_lat_lon_tuple() for location in self.route]
-    elevations = request_elevations(locations)
-    for location, elevation in zip(self.route, elevations):
-      location.altitude = elevation
-      location.add_xyz()
+    self.start_location = route[0]
+    self.end_location = route[-1]
 
   def write_route(self, file_name):
     """Write route into csv with each line as x,y,z.
@@ -144,7 +132,6 @@ class TimedRoute(Route):
           new_point = Location(start_point.latitude + latitude_delta*j,
                                start_point.longitude + longitude_delta*j,
                                start_point.altitude + altitude_delta*j)
-          new_point.add_xyz()
           new_route.append(new_point)
     new_route.append(self.route[-1])
     self.route = new_route

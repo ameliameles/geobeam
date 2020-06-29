@@ -34,24 +34,19 @@ class Location():
     z: a float for the z coordinate of the location in ECEF format
   """
 
-  def __init__(self, latitude, longitude, altitude=None):
+  def __init__(self, latitude, longitude, altitude=0):
     self.latitude = latitude
     self.longitude = longitude
     self.altitude = altitude
-    self.x = None
-    self.y = None
-    self.z = None
+    self.x, self.y, self.z = geodetic_to_cartesian(self.latitude,
+                                                   self.longitude,
+                                                   self.altitude)
 
   def get_lat_lon_tuple(self):
     return (self.latitude, self.longitude)
 
   def get_xyz_tuple(self):
     return (self.x, self.y, self.z)
-
-  def add_xyz(self):
-    self.x, self.y, self.z = geodetic_to_cartesian(self.latitude,
-                                                   self.longitude,
-                                                   self.altitude)
 
   def __repr__(self):
     return "Location(%s, %s, %s)" % (self.latitude, self.longitude,
