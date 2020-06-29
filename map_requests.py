@@ -44,7 +44,7 @@ def request_directions(start_location, end_location):
     a list of directions in the deserialized Maps API response format
     https://developers.google.com/maps/documentation/directions/intro#DirectionsResponses
   """
-  now = datetime.now()
+  now = datetime.datetime.now()
   directions_response = GMAPS.directions(start_location, end_location,
                                          mode="walking", departure_time=now)
   parsed_directions_response = parse_directions_response(directions_response)
@@ -61,15 +61,13 @@ def parse_directions_response(directions_response):
     if a valid route is found a tuple containing:
       a list of the (lat,lon) points on the route
       a list of distances between those points (in meters)
-      a list of durations between those points (in seconds)
       a string of the encoded polyline that can be plotted to show route
-    otherwise: a message that no routes were found
+    otherwise: raises a Value Error since no routes were produced
   """
   if directions_response:
     route_response = directions_response[0]
     route_points = []
     route_distances = []
-    route_durations = []
     route_polyline = route_response["overview_polyline"]["points"]
 
     legs = route_response["legs"]
@@ -82,12 +80,10 @@ def parse_directions_response(directions_response):
         new_point = (step["end_location"]["lat"],
                      step["end_location"]["lng"])
         new_distance = step["distance"]["value"]  # distance from step's start to end in meters
-        new_duration = step["duration"]["value"]  # duration from step's start to end in seconds
         route_points.append(new_point)
         route_distances.append(new_distance)
-        route_durations.append(new_duration)
 
-    return (route_points, route_distances, route_durations, route_polyline)
+    return (route_points, route_distances, route_polyline)
 
   else:
     raise ValueError("no route between start and end, try new points")

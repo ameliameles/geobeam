@@ -28,42 +28,9 @@ speeds (walking, running, biking)
 
 import csv
 
-from gps_utils import lla_to_xyz
+from gps_utils import Location
 from map_requests import request_directions
 from map_requests import request_elevations
-
-
-class Location():
-  """An object for a location in the form of a set of coordinates.
-
-  Attributes:
-    latitude: a float for the latitude of the location in Decimal Degrees
-    longitude: a float for the longitude of the location in Decimal Degrees
-    altitude: a float for the altitude of the location in Decimal Degrees
-    x: a float for the x coordinate of the location in ECEF format
-    y: a float for the y coordinate of the location in ECEF format
-    z: a float for the z coordinate of the location in ECEF format
-  """
-
-  def __init__(self, latitude, longitude, altitude=None):
-    self.latitude = latitude
-    self.longitude = longitude
-    self.altitude = altitude
-    self.x = None
-    self.y = None
-    self.z = None
-
-  def get_lat_lon_tuple(self):
-    return (self.latitude, self.longitude)
-
-  def get_xyz_tuple(self):
-    return (self.x, self.y, self.z)
-
-  def add_xyz(self):
-    self.x, self.y, self.z = lla_to_xyz(self.latitude, self.longitude, self.altitude)
-
-  def __repr__(self):
-    return "Location(%s, %s, %s)" % (self.latitude, self.longitude, self.altitude)
 
 
 class Route():
@@ -73,8 +40,8 @@ class Route():
     start_location: a Location object for the start of the route
     end_location: a Location object for the end of the route
     route: a list of Location objects for each point on the route
-    distances: a list of distances between each pair of consecutive locations
-    durations: a list of durations between each pair of consecutive locations
+    distances: a list of distances between each pair of consecutive
+    locations in meters
     polyline: an encoded format for the route given by the Maps API
     for ease of drawing
   """
@@ -84,8 +51,8 @@ class Route():
     self.end_location = end_location
     self.route = []
     self.distances = []
-    self.durations = []
     self.polyline = None
+    self.create_route()
 
   def create_route(self):
     """Create a route by requesting from Maps API and then adding altitudes/xyz to each point.
@@ -96,7 +63,7 @@ class Route():
     """
     result = request_directions(self.start_location.get_lat_lon_tuple(),
                                 self.end_location.get_lat_lon_tuple())
-    locations, self.distances, self.durations, self.polyline = result
+    locations, self.distances, self.polyline = result
     route = []
     for location in locations:
       latitude = location[0]
@@ -111,24 +78,20 @@ class Route():
     sets elevation data for each point, and then adds xyz conversion
     from lla to each point
     """
-    locations = []
-    for location in self.route:
-      locations.append(location.get_lat_lon_tuple())
+    locations = [location.get_lat_lon_tuple() for location in self.route]
     elevations = request_elevations(locations)
     for location, elevation in zip(self.route, elevations):
       location.altitude = elevation
-      location.add_XYZ()
+      location.add_xyz()
 
   def write_route(self, file_name):
-    """write route into csv with each line as x,y,z.
+    """Write route into csv with each line as x,y,z.
 
     Args:
       file_name: name of file to write route to
     """
-    write_array = []
-    for location in self.route:
-      write_array.append(location.get_xyz_tuple())
-    write_to_csv(file_name, write_array)
+    write_array = [location.get_xyz_tuple() for location in self.route]
+    _write_to_csv(file_name, write_array)
 
 
 class TimedRoute(Route):
@@ -137,19 +100,19 @@ class TimedRoute(Route):
   Attributes:
     start_location: a Location object for the start of the route
     end_location: a Location object for the end of the route
-    speed: how fast the person moves through the route
+    speed: how fast the person moves through the route in meters/second
     frequency: how many points per second the timed route should have (Hz)
     route: a list of Location objects for each point on the route
-    distances: a list of distances between each pair of consecutive locations
-    durations: a list of durations between each pair of consecutive locations
+    distances: a list of distances for each pair of consecutive locations
+    in meters
     polyline: an encoded format for the route given by the Maps API
     for ease of drawing
   """
 
   def __init__(self, start_location, end_location, speed, frequency):
-    Route.__init__(self, start_location, end_location)
     self.speed = speed
     self.frequency = frequency
+    Route.__init__(self, start_location, end_location)
 
   def create_route(self):
     Route.create_route(self)
@@ -166,34 +129,31 @@ class TimedRoute(Route):
     points_per_meter = self.frequency/self.speed
     new_route = []
 
-    # fill first 10 cycles with first location
-    for i in range(10):
-      new_route.append(self.route[0])
-
     for i in range(len(self.distances)):
       distance = self.distances[i]
       start_point = self.route[i]
       end_point = self.route[i+1]
+      new_route.append(start_point)
 
       points_needed = int(distance*points_per_meter)-1
-      latitude_delta = (end_point.latitude-start_point.latitude) / points_needed
-      longitude_delta = (end_point.longitude-start_point.longitude) / points_needed
-      altitude_delta = (end_point.altitude-start_point.altitude) / points_needed
-      for j in range(points_needed):
-        new_point = Location(start_point.latitude + latitude_delta*j,
-                             start_point.longitude + longitude_delta*j,
-                             start_point.altitude + altitude_delta*j)
-      new_point.add_xyz()
-      new_route.append(new_point)
+      if points_needed > 0:
+        latitude_delta = (end_point.latitude-start_point.latitude) / points_needed
+        longitude_delta = (end_point.longitude-start_point.longitude) / points_needed
+        altitude_delta = (end_point.altitude-start_point.altitude) / points_needed
+        for j in range(1, points_needed):
+          new_point = Location(start_point.latitude + latitude_delta*j,
+                               start_point.longitude + longitude_delta*j,
+                               start_point.altitude + altitude_delta*j)
+          new_point.add_xyz()
+          new_route.append(new_point)
     new_route.append(self.route[-1])
     self.route = new_route
-    self.durations = [1/self.frequency for x in range(len(new_route)-1)]
     self.distances = [1/points_per_meter for x in range(len(new_route)-1)]
 
   def write_route(self, file_name):
     """write route into csv with each line as time,x,y,z.
 
-    time starts at 0.0 and time values are rounded to one decimal place
+    time starts at 0.0 seconds and time values are rounded to one decimal place
 
     Args:
       file_name: name of file to write route to
@@ -203,9 +163,9 @@ class TimedRoute(Route):
     for location in self.route:
       write_array.append(("%.1f" % (time,),)+location.get_xyz_tuple())
       time = time + (1/self.frequency)
-    write_to_csv(file_name, write_array)
+    _write_to_csv(file_name, write_array)
 
 
-def write_to_csv(file_name, value_array):
+def _write_to_csv(file_name, value_array):
   with open(file_name, "w") as csv_file:
     csv.writer(csv_file).writerows(value_array)

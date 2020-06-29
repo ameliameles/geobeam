@@ -18,15 +18,51 @@
 import math
 
 # World Geodetic System defined constants
-WGS84_EARTH_RADIUS = 6378137.0
-WGS84_ECCENTRICITY = 0.0818191908426
+_WGS84_EARTH_RADIUS = 6378137.0
+_WGS84_ECCENTRICITY = 0.0818191908426
 
 
-def lla_to_xyz(latitude, longitude, altitude):
-  """Convert a single lat/lng/alt coordinate to ECEF coordinate system.
+class Location():
+  """An object for a location in the form of a set of coordinates.
 
-  Produces earth-centered, earth-fixed (ecef) coordinates and was
-  adapted from c code in bladeGPS:
+  Attributes:
+    latitude: a float for the latitude of the location in Decimal Degrees
+    longitude: a float for the longitude of the location in Decimal Degrees
+    altitude: a float for the altitude of the location in Decimal Degrees
+    x: a float for the x coordinate of the location in ECEF format
+    y: a float for the y coordinate of the location in ECEF format
+    z: a float for the z coordinate of the location in ECEF format
+  """
+
+  def __init__(self, latitude, longitude, altitude=None):
+    self.latitude = latitude
+    self.longitude = longitude
+    self.altitude = altitude
+    self.x = None
+    self.y = None
+    self.z = None
+
+  def get_lat_lon_tuple(self):
+    return (self.latitude, self.longitude)
+
+  def get_xyz_tuple(self):
+    return (self.x, self.y, self.z)
+
+  def add_xyz(self):
+    self.x, self.y, self.z = geodetic_to_cartesian(self.latitude,
+                                                   self.longitude,
+                                                   self.altitude)
+
+  def __repr__(self):
+    return "Location(%s, %s, %s)" % (self.latitude, self.longitude,
+                                     self.altitude)
+
+
+def geodetic_to_cartesian(latitude, longitude, altitude):
+  """Convert a single lat/lng/alt geodetic coordinate to ECEF cartesian coordinate.
+
+  Produces earth-centered, earth-fixed (ecef) cartesian coordinates from
+  a geodetic coordinate (lat, lon, alt) and was adapted from c code in bladeGPS:
   https://github.com/osqzss/bladeGPS/blob/master/gpssim.c
 
   Args:
@@ -37,15 +73,15 @@ def lla_to_xyz(latitude, longitude, altitude):
   Returns:
     location in ecef format (x,y,z)
   """
-  eccentricity_sq = WGS84_ECCENTRICITY**2
-  latitude_radians = latitude * (3.14159265358979/180)
-  longitude_radians = longitude * (3.14159265358979/180)
+  eccentricity_sq = _WGS84_ECCENTRICITY**2
+  latitude_radians = math.radians(latitude)
+  longitude_radians = math.radians(longitude)
 
   cos_latitude = math.cos(latitude_radians)
   sin_latitude = math.sin(latitude_radians)
   cos_longitude = math.cos(longitude_radians)
   sin_longitude = math.sin(longitude_radians)
-  n_vector = WGS84_EARTH_RADIUS/math.sqrt(1.0-(WGS84_ECCENTRICITY*sin_latitude)**2)
+  n_vector = _WGS84_EARTH_RADIUS/math.sqrt(1.0-(_WGS84_ECCENTRICITY*sin_latitude)**2)
 
   x = (n_vector + altitude)*cos_latitude*cos_longitude
   y = (n_vector + altitude)*cos_latitude*sin_longitude
