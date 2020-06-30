@@ -28,7 +28,7 @@ class Location():
   Attributes:
     latitude: a float for the latitude of the location in Decimal Degrees
     longitude: a float for the longitude of the location in Decimal Degrees
-    altitude: a float for the altitude of the location in Decimal Degrees
+    altitude: a float for the altitude of the location in meters
     x: a float for the x coordinate of the location in ECEF format
     y: a float for the y coordinate of the location in ECEF format
     z: a float for the z coordinate of the location in ECEF format
@@ -56,17 +56,17 @@ class Location():
 def geodetic_to_cartesian(latitude, longitude, altitude):
   """Convert a single lat/lng/alt geodetic coordinate to ECEF cartesian coordinate.
 
-  Produces earth-centered, earth-fixed (ecef) cartesian coordinates from
+  Produces earth-centered, earth-fixed (ECEF) cartesian coordinates from
   a geodetic coordinate (lat, lon, alt) and was adapted from c code in bladeGPS:
   https://github.com/osqzss/bladeGPS/blob/master/gpssim.c
 
   Args:
-    latitude: latitude float
-    longitude: longitude float
-    altitude: altitude float
+    latitude: float in Decimal Degrees
+    longitude: float in Decimal Degrees
+    altitude: float in meters
 
   Returns:
-    location in ecef format (x,y,z)
+    location in ECEF format (x,y,z)
   """
   eccentricity_sq = _WGS84_ECCENTRICITY**2
   latitude_radians = math.radians(latitude)

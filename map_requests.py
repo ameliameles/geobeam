@@ -13,14 +13,6 @@
 # limitations under the License.
 
 """Handles requests and parsing of Google Maps API calls.
-
-Typical usage example:
-
-  directions = request_directions((37.417747,-122.086086),
-  (37.421624, -122.096472))
-
-  elevations = request_elevations([(37.417747,-122.086086),
-  (37.421624, -122.096472),(37.45634, -121.046592)])
 """
 
 import datetime
@@ -29,7 +21,7 @@ import pprint
 from config import api_key
 import googlemaps
 
-
+# TODO(ameles) wrap map requests in a class so api isn't hard coded in
 API_KEY = api_key
 GMAPS = googlemaps.Client(key=API_KEY)
 
@@ -110,13 +102,9 @@ def parse_elevations_response(elevations_response):
     elevations_response: list of elevation responses in the deserialized
     Elevation API response format
   Returns:
-    a list of elevations in the same order as given response
+    a list of elevations (in meters) in the same order as given response
   """
-  elevations = []
-  for result in elevations_response:
-    elevations.append(result["elevation"])
-  return elevations
-
+  return [result["elevation"] for result in elevations_response]
 
 def print_reponse(response):
   pp = pprint.PrettyPrinter(depth=6)

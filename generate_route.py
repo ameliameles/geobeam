@@ -117,6 +117,11 @@ class TimedRoute(Route):
     points_per_meter = self.frequency/self.speed
     new_route = []
 
+    # TODO(ameles) check if we need to do this for better location fixing
+    # fill first 10 cycles with starting location
+    for i in range(10):
+      new_route.append(self.route[0])
+
     for i in range(len(self.distances)):
       distance = self.distances[i]
       start_point = self.route[i]
