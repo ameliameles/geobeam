@@ -20,7 +20,9 @@ from generate_route import Route
 from generate_route import TimedRoute
 from gps_utils import Location
 
+#meters per second
 TRANSPORT_SPEEDS = {"walking": 1.4, "running": 2.5, "biking": 7}
+10_HZ = 10
 
 
 def main():
@@ -33,15 +35,15 @@ def main():
   route.write_route("routetestfile.csv")
 
   # gives 16459 points at 7 points/meter & 10 points/second
-  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["walking"], 10)
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["walking"], 10_HZ)
   user_motion.write_route("userwalking.csv")
 
   # gives 9226 points at 4 points/meter & 10 points/second
-  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["running"], 10)
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["running"], 10_HZ)
   user_motion.write_route("userrunning.csv")
 
   # gives 3289 points at 1.4 points/meter & 10 points/second
-  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["biking"], 10)
+  user_motion = TimedRoute(location1, location2, TRANSPORT_SPEEDS["biking"], 10_HZ)
   user_motion.write_route("userbiking.csv")
 
 if __name__ == "__main__":
