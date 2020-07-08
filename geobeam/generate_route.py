@@ -28,9 +28,9 @@ speeds (walking, running, biking)
 
 import csv
 
-from gps_utils import Location
-from map_requests import request_directions
-from map_requests import request_elevations
+from .gps_utils import Location
+from .map_requests import request_directions
+from .map_requests import request_elevations
 
 
 class Route():
@@ -155,7 +155,7 @@ class TimedRoute(Route):
     for location in self.route:
       write_array.append(("%.1f" % (time,),)+location.get_xyz_tuple())
       time = time + (1/self.frequency)
-    _write_to_csv(file_name, write_array)
+    _write_to_csv("geobeam/user_motion_files/"+file_name, write_array)
 
 
 def _write_to_csv(file_name, value_array):

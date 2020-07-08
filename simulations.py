@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Run simulations.
+"""Simulation Classes.
 
   Typical usage example:
 
@@ -30,18 +30,24 @@ from tools import kbhit
 
 
 class Simulation():
+  """An object for a single GPS Simulation.
 
+  Attributes:
+    run_time: simulation duration in seconds
+    gain: signal gain for the broadcast by bladeRF board
+    process: python subprocess created for the simulation
+    process_args: arguments for command to pass into subprocess to run the
+    simulation in bladeGPS
+  """
   def __init__(self, run_time, gain=-2):
     self.run_time = run_time
     self.gain = gain
     self.process = None
-    self.running = False
     self.process_args = ["./run_bladerfGPS.sh", "-T", "now", "-d", str(self.run_time)]
 
   def run_simulation(self):
     #self.process = subprocess.Popen(self.process_args, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, cwd="./bladeGPS")
     self.process = subprocess.Popen(self.process_args, stdin=subprocess.PIPE, cwd="./bladeGPS")
-    self.running = True
     return
 
   def end_simulation(self):
@@ -60,14 +66,24 @@ class Simulation():
       #output = out[0].decode("utf-8").rstrip("\n")
       #print(output)
       print("Subprocess closed.")
-    self.running = False
+      print("------------------------------------------------")
 
-  def update_status(self):
-    if self.process.poll() is not None:
-      self.running = False
+  def is_running(self):
+    return self.process is not None and self.process.poll() is None
 
 
 class StaticSimulation(Simulation):
+  """An object for a single GPS Simulation for a static location.
+
+  Attributes:
+    run_time: simulation duration in seconds
+    gain: signal gain for the broadcast by bladeRF board
+    process: python subprocess created for the simulation
+    process_args: arguments for command to pass into subprocess to run the
+    simulation in bladeGPS
+    latitude: static location latitude in decimal degrees
+    longitude: static location longitude in decimal degrees
+  """
 
   def __init__(self, run_time, gain, latitude, longitude):
     Simulation.__init__(self, run_time, gain)
@@ -78,7 +94,17 @@ class StaticSimulation(Simulation):
 
 
 class DynamicSimulation(Simulation):
+  """An object for a single GPS Simulation for a static location.
 
+  Attributes:
+    run_time: simulation duration in seconds
+    gain: signal gain for the broadcast by bladeRF board
+    process: python subprocess created for the simulation
+    process_args: arguments for command to pass into subprocess to run the
+    simulation in bladeGPS
+    file_path: path to user motion csv file for dynamic route simulation
+    either absolutely or relative to the bladeGPS directory
+  """
   def __init__(self, run_time, gain, file_path):
     Simulation.__init__(self, run_time, gain)
     self.file_path = file_path
@@ -86,11 +112,18 @@ class DynamicSimulation(Simulation):
 
 
 class SimulationSet():
+  """An object for a set of GPS simulations (that can be dynamic or static).
 
+  Attributes:
+    simulations: list of simulation objects in order of desired execution
+    current_simulation: simulation object currently being run
+    current_simulation_index: index of currently run simulation object in list
+    ephemeris_filename: name of ephemeris file being used for the simulations
+  """
   def __init__(self, simulations):
     self.simulations = simulations
     self.current_simulation = None
-    self.current_simulation_number = None
+    self.current_simulation_index = None
     # eventually may want to specify a certain ephemeris date file to use & download it
     today = datetime.datetime.now()
     day_of_year = today.strftime("%j")
@@ -98,52 +131,42 @@ class SimulationSet():
     self.ephemeris_filename = "brdc%s_%s0.%sn" % (year, today, year[2:])
 
   def run_simulations(self):
-    self.current_simulation_number = 0
-    self.current_simulation = self.simulations[self.current_simulation_number]
+    self.current_simulation_index = 0
+    self.current_simulation = self.simulations[self.current_simulation_index]
     self.current_simulation.run_simulation()
-    print('Hit n to go to next sim, p to go to previous sim, or q to quit')
-    while self.current_simulation_number < len(self.simulations):
-      self.current_simulation.update_status()
+    print("------------------------------------------------")
+    print("Press 'n' to go to next sim, 'p' to go to previous sim, or 'q' to quit")
+    print("------------------------------------------------")
+    while self.current_simulation_index < len(self.simulations):
+      simulation_running = self.current_simulation.is_running()
       key_hit = key_pressed()
-      # print(self.current_simulation,self.current_simulation.running)
-      if key_hit == "q" or (not self.current_simulation.running and self.current_simulation_number == len(self.simulations)+1):
+      if key_hit == "q" or (not simulation_running and self.current_simulation_index >= len(self.simulations)-1):
         self.current_simulation.end_simulation()
         break
-      elif key_hit == "n" or not self.current_simulation.running:
-        self.switch_simulation(self.current_simulation_number+1)
+      elif key_hit == "n" or not simulation_running:
+        self.switch_simulation(self.current_simulation_index+1)
       elif key_hit == "p":
-        self.switch_simulation(self.current_simulation_number-1)
+        self.switch_simulation(self.current_simulation_index-1)
     self.end_simulations()
     return
 
-  def switch_simulation(self, new_simulation_number):
-    if new_simulation_number < len(self.simulations) and new_simulation_number >= 0:
-      self.current_simulation_number = new_simulation_number
+  def switch_simulation(self, new_simulation_index):
+    if new_simulation_index < len(self.simulations) and new_simulation_index >= 0:
+      self.current_simulation_index = new_simulation_index
       self.current_simulation.end_simulation()
-      self.current_simulation = self.simulations[self.current_simulation_number]
+      self.current_simulation = self.simulations[self.current_simulation_index]
       self.current_simulation.run_simulation()
 
   def end_simulations(self):
     print("Simulation set ending...")
-
+    self.current_simulation = None
+    self.current_simulation_index = None
 
 def key_pressed():
   keyboard = kbhit.KBHit()
   pressed_char = None
   if keyboard.kbhit():
-      pressed_char = keyboard.getch()
-      print(pressed_char)
+    pressed_char = keyboard.getch()
+    #print(pressed_char)
   keyboard.set_normal_term()
   return pressed_char
-
-def main():
-  sim_one = StaticSimulation(30, -2, 37.417747, -122.086086)
-  sim_two = StaticSimulation(30, -2, 27.417747, -112.086086)
-  # sim_three = StaticSimulation(30,-2, 17.417747,-102.086086)
-  sim_three = DynamicSimulation(30, -2, "../userbiking.csv")
-  simulation_set = SimulationSet([sim_one, sim_two, sim_three])
-  simulation_set.run_simulations()
-
-
-if __name__ == "__main__":
-  sys.exit(main())
