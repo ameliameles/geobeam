@@ -1,3 +1,0 @@
-userbiking.csv
-userrunning.csv
-userwalking.csv
