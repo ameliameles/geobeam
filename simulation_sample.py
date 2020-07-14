@@ -3,9 +3,7 @@
 import os
 import sys
 
-from simulations import StaticSimulation
-from simulations import DynamicSimulation
-from simulations import SimulationSet
+from geobeam.simulations import SimulationSetBuilder
 from geobeam import generate_route
 from geobeam import gps_utils
 
@@ -17,17 +15,18 @@ def main():
   speed = 7  # meters/sec
   frequency = 10  # Hz
   file_name = "userwalking.csv"
-  
+
   user_motion = generate_route.TimedRoute(location1, location2, speed, frequency)
   user_motion.write_route(file_name)
 
   file_path = os.path.abspath("geobeam/user_motion_files/" + file_name)
-  sim_one = DynamicSimulation(600, -2, file_path)
-  sim_two = StaticSimulation(60, -2, 27.417747, -112.086086)
-  sim_three = StaticSimulation(10, -4, 37.417747, -122.086086)
-  simulation_set = SimulationSet([sim_one, sim_two, sim_three])
-  simulation_set.run_simulations()
 
+  simulation_set_builder = SimulationSetBuilder()
+  simulation_set_builder.add_dynamic_route(file_path)
+  simulation_set_builder.add_dynamic_route(file_path, run_duration=30, gain=-2)
+  simulation_set_builder.add_static_route(27.417747, -112.086086, run_duration=10, gain=-2)
+  simulation_set = simulation_set_builder.build()
+  simulation_set.run_simulations()
 
 if __name__ == "__main__":
   sys.exit(main())
