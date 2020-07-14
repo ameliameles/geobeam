@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,20 +22,22 @@
 """
 
 import datetime
+import os
 import subprocess
 import time
 
 from tools import kbhit
 
 KEYBOARD = kbhit.KBHit()
+ONE_SEC = 1
 
 
 class Simulation():
   """An object for a single GPS Simulation.
 
   Attributes:
-    run_time: simulation duration in seconds
-    gain: signal gain for the broadcast by bladeRF board
+    run_duration: int, simulation duration in seconds
+    gain: float, signal gain for the broadcast by bladeRF board
     process: python subprocess created for the simulation
     process_args: arguments for command to pass into subprocess to run the
     simulation in bladeGPS
@@ -45,11 +45,10 @@ class Simulation():
     end_time: DateTime object for most recent end time
   """
 
-  def __init__(self, run_time, gain=-2):
-    self.run_time = run_time
+  def __init__(self, run_duration=None, gain=None):
+    self.run_duration = run_duration
     self.gain = gain
     self.process = None
-    self.process_args = ["./run_bladerfGPS.sh", "-T", "now", "-d", str(self.run_time)]
     self.start_time = None
     self.end_time = None
 
@@ -57,7 +56,7 @@ class Simulation():
     """Starts bladeGPS subprocess using given simulation process arguments.
     """
     self.start_time = datetime.datetime.utcnow()
-    self.process = subprocess.Popen(self.process_args, stdin=subprocess.PIPE, cwd="./bladeGPS")
+    self.process = create_bladeGPS_process(run_duration=self.run_duration, gain=self.gain)
     return
 
   def end_simulation(self):
@@ -67,17 +66,20 @@ class Simulation():
     keyboard signal), terminate, and then kill the subprocess in that order
     """
     while self.process.poll() is None:
+      self.end_time = datetime.datetime.utcnow()
       self.process.communicate(input="q".encode())
       print("Quitting simulation...")
+      time.sleep(ONE_SEC)
       if self.process.poll() is None:
         print("Terminating subprocess...")
         self.process.terminate()
-        time.sleep(2)
+        time.sleep(ONE_SEC)
       if self.process.poll() is None:
         print("Killing subprocess...")
         self.process.kill()
-        time.sleep(2)
-    self.end_time = datetime.datetime.utcnow()
+        time.sleep(ONE_SEC)
+    else:
+      self.end_time = datetime.datetime.utcnow()
     self.process = None
     print("Subprocess closed.")
     print("------------------------------------------------")
@@ -86,17 +88,16 @@ class Simulation():
     """Checks if there is bladeGPS subprocess currently running.
 
     Returns:
-      True if there is a running process, false otherwise
+      True if there is a running process, False otherwise
     """
-    return self.process is not None and self.process.poll() is None
-
-
+    return bool(self.process and self.process.poll() is None)
+    
 class StaticSimulation(Simulation):
   """An object for a single GPS Simulation for a static location.
 
   Attributes:
-    run_time: simulation duration in seconds
-    gain: signal gain for the broadcast by bladeRF board
+    run_duration: int, simulation duration in seconds
+    gain: float, signal gain for the broadcast by bladeRF board
     process: python subprocess created for the simulation
     process_args: arguments for command to pass into subprocess to run the
     simulation in bladeGPS
@@ -106,60 +107,103 @@ class StaticSimulation(Simulation):
     longitude: static location longitude in decimal degrees
   """
 
-  def __init__(self, run_time, gain, latitude, longitude):
-    Simulation.__init__(self, run_time, gain)
+  def __init__(self, run_duration, gain, latitude, longitude):
+    Simulation.__init__(self, run_duration, gain)
     self.latitude = latitude
     self.longitude = longitude
-    coordinate = "%s,%s" % (latitude, longitude)
-    self.process_args = ["./run_bladerfGPS.sh", "-l", coordinate, "-T", "now",
-                         "-d", str(self.run_time), "-a", str(self.gain)]
+
+  def run_simulation(self):
+    """Starts bladeGPS subprocess using given simulation process arguments.
+    """
+    self.start_time = datetime.datetime.utcnow()
+    location = "%s,%s" % (self.latitude, self.longitude)
+    self.process = create_bladeGPS_process(run_duration=self.run_duration,
+                                              gain=self.gain,
+                                              location=location)
+    return
 
   def __repr__(self):
-    return "StaticSimulation(run_time=%s, gain=%s, latitude=%s, longitude=%s)" % (self.run_time, self.gain, self.latitude, self.longitude)
+    return "StaticSimulation(run_duration=%s, gain=%s, latitude=%s, longitude=%s)" % (self.run_duration, self.gain, self.latitude, self.longitude)
 
 
 class DynamicSimulation(Simulation):
   """An object for a single GPS Simulation for a static location.
 
   Attributes:
-    run_time: simulation duration in seconds
-    gain: signal gain for the broadcast by bladeRF board
+    run_duration: int, simulation duration in seconds
+    gain: float, signal gain for the broadcast by bladeRF board
     process: python subprocess created for the simulation
     process_args: arguments for command to pass into subprocess to run the
     simulation in bladeGPS
     start_time: DateTime object for most recent start time
     end_time: DateTime object for most recent end time
-    file_name: name user motion csv file for dynamic route simulation
-    to be used from the user_motion_files directory
+    file_name: absolute file path to user motion csv file for 
+    dynamic route simulation
   """
 
-  def __init__(self, run_time, gain, file_name):
-    Simulation.__init__(self, run_time, gain)
-    self.file_name = file_name
-    file_path = "../geobeam/user_motion_files/" + file_name
-    self.process_args = ["./run_bladerfGPS.sh", "-u", file_path, "-T", "now",
-                         "-d", str(self.run_time), "-a", str(self.gain)]
+  def __init__(self, run_duration, gain, file_path):
+    Simulation.__init__(self, run_duration, gain)
+    self.file_path = str(file_path)
+
+  def run_simulation(self):
+    """Starts bladeGPS subprocess using given simulation process arguments.
+    """
+    self.start_time = datetime.datetime.utcnow()
+    self.process = create_bladeGPS_process(run_duration=self.run_duration,
+                                              gain=self.gain,
+                                              dynamic_file_path=self.file_path)
+    return
 
   def __repr__(self):
-    return "DynamicSimulation(run_time=%s, gain=%s, file_name=%s)" % (self.run_time, self.gain, self.file_name)
+    return "DynamicSimulation(run_duration=%s, gain=%s, file_name=%s)" % (self.run_duration, self.gain, self.file_path)
 
+
+def create_bladeGPS_process(run_duration=None,
+                                   gain=None,
+                                   location=None,
+                                   dynamic_file_path=None):
+  """Returns list of args that make up the specified bladeGPS command.
+  
+  Args:
+    run_duration: int, time in seconds for how long simulation should run
+    gain: float, signal gain for the broadcast by bladeRF board
+    location: string, "%s,%s" % (latitude, longitude)
+    file_path: string, absolute file path to user motion csv file for 
+    dynamic route simulation
+  Returns:
+    list of strings, each of which is an element of the command
+    when put together and space-separated
+  """
+  command = ["./run_bladerfGPS.sh", "-T", "now"]
+  if run_duration:
+    command.append("-d")
+    command.append(str(run_duration))
+  if gain:
+    command.append("-a")
+    command.append(str(gain))
+  if location:
+    command.append("-l")
+    command.append(location)
+  elif dynamic_file_path:
+    command.append("-u")
+    command.append(dynamic_file_path)
+  process = subprocess.Popen(command, stdin=subprocess.PIPE, cwd="./bladeGPS")
+  return process
 
 class SimulationSet():
   """An object for a set of GPS simulations (that can be dynamic or static).
 
   Attributes:
     simulations: list of simulation objects in order of desired execution
-    current_simulation: simulation object currently being run
     current_simulation_index: index of currently run simulation object in list
     log_filename: string for name of file to log into simulation_logs folder
   """
 
   def __init__(self, simulations):
     self.simulations = simulations
-    self.current_simulation = None
     self.current_simulation_index = None
     now = datetime.datetime.utcnow()
-    self.log_filename = now.strftime("%Y-%m-%d_%H:%M:%S")
+    self.log_filename = now.strftime("GPSSIM-%Y-%m-%d_%H:%M:%S")
 
   def run_simulations(self):
     """Starts simulations and navigates through according to user key press.
@@ -169,26 +213,40 @@ class SimulationSet():
     keyboard input. If user presses q or last simulation finishes, it ends
     the simulation set
     """
-    self.current_simulation_index = 0
-    self.current_simulation = self.simulations[self.current_simulation_index]
-    self.current_simulation.run_simulation()
     print("------------------------------------------------")
     print("Press 'n' to go to next sim, 'p' to go to previous sim, or 'q' to quit")
     print("------------------------------------------------")
+
+    self.switch_simulation(0)
     while self.current_simulation_index < len(self.simulations):
-      simulation_running = self.current_simulation.is_running()
+      current_simulation = self.get_current_simulation()
+      simulation_running = current_simulation.is_running()
       key_hit = key_pressed()
-      if key_hit == "q" or (not simulation_running and self.current_simulation_index >= len(self.simulations)-1):
-        self.current_simulation.end_simulation()
+      if not simulation_running and self.current_simulation_index >= len(self.simulations)-1:
+        current_simulation.end_simulation()
         self.log_simulation()
         break
-      elif key_hit == "n" or not simulation_running:
+      elif key_hit == "q" or key_hit == "Q":
+        current_simulation.end_simulation()
+        self.log_simulation()
+        break
+      elif (key_hit == "n" or key_hit == "N") or not simulation_running:
         self.switch_simulation(self.current_simulation_index+1)
-      elif key_hit == "p":
+      elif key_hit == "p" or key_hit == "P":
         self.switch_simulation(self.current_simulation_index-1)
     print("Simulation set ending...")
-    self.current_simulation = None
     self.current_simulation_index = None
+
+  def get_current_simulation(self):
+    """Gets current simulation object.
+
+    Returns:
+      current simulation object if set has been started, None otherwise
+    """
+    if self.current_simulation_index is not None:
+      return self.simulations[self.current_simulation_index]
+    else:
+      return None
 
   def switch_simulation(self, new_simulation_index):
     """Switch to another simulation from the current simulation.
@@ -200,12 +258,17 @@ class SimulationSet():
       new_simulation_index: int for index desired simulation to be run
     """
     if new_simulation_index < len(self.simulations) and new_simulation_index >= 0:
+      current_simulation = self.get_current_simulation()
+      if (current_simulation):
+        current_simulation.end_simulation()
+        self.log_simulation()
+      new_simulation = self.simulations[new_simulation_index]
+      new_simulation.run_simulation()
       self.current_simulation_index = new_simulation_index
-      self.current_simulation.end_simulation()
-      self.log_simulation()
-
-      self.current_simulation = self.simulations[self.current_simulation_index]
-      self.current_simulation.run_simulation()
+    elif new_simulation_index < 0:
+      print("\nAlready on first simulation")
+    else:
+      print("\nAlready on last simulation")
 
   def log_simulation(self):
     """Log start time, end time, type of simulation, and points (if dynamic).
@@ -218,22 +281,21 @@ class SimulationSet():
     log_file_path = "simulation_logs/" + self.log_filename
 
     with open(log_file_path, "a") as logfile:
+      current_simulation = self.get_current_simulation()
+      logfile.write(str(current_simulation) + "\n")
+      start_time = current_simulation.start_time
+      end_time = current_simulation.end_time
+      total_time = (end_time-start_time).total_seconds()
+      logfile.write("Start Time: " + start_time.strftime("%Y-%m-%d,%H:%M:%S") + "\n")
 
-      logfile.write(str(self.current_simulation) + "\n")
-      start = self.current_simulation.start_time.strftime("%Y-%m-%d,%H:%M:%S")
-      end = self.current_simulation.end_time.strftime("%Y-%m-%d,%H:%M:%S")
-      total_time = (self.current_simulation.end_time - self.current_simulation.start_time).total_seconds()
-      logfile.write("Start Time: " + start + "\n")
-
-      if isinstance(self.current_simulation, DynamicSimulation):
-        route_file_path = "geobeam/user_motion_files/" + self.current_simulation.file_name
+      if isinstance(current_simulation, DynamicSimulation):
+        route_file_path = current_simulation.file_path
         with open(route_file_path, "r") as route_file:
           lines_to_read = int(total_time*10)  # 10 points per second
-          for line, i in zip(route_file, range(lines_to_read)):
-            logfile.write(line)
+          for _ in range(lines_to_read):
+            logfile.write(next(route_file))
 
-      logfile.write("End Time: " + end + "\n\n")
-
+      logfile.write("End Time: " + end_time.strftime("%Y-%m-%d,%H:%M:%S") + "\n\n")
 
 def key_pressed():
   """Uses Kbhit library to check if user has pressed key.
@@ -245,3 +307,4 @@ def key_pressed():
   if KEYBOARD.kbhit():
     pressed_char = KEYBOARD.getch()
   return pressed_char
+

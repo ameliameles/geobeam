@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """https://simondlevy.academic.wlu.edu/files/software/kbhit.py.
 
 A Python class implementing KBHIT, the standard keyboard-interrupt poller.
