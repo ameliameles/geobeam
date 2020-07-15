@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import ANY
 from geobeam import map_requests
-import datetime
 
 
 class MapRequestsTest(unittest.TestCase):
