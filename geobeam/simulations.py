@@ -36,15 +36,15 @@ ONE_SEC = 1
 class Simulation():
   """An object for a single GPS Simulation.
 
-  Attributes:
-    run_duration: int, simulation duration in seconds
-    gain: float, signal gain for the broadcast by bladeRF board
-    process: python subprocess created for the simulation
-    start_time: DateTime object for most recent start time
-    end_time: DateTime object for most recent end time
   """
 
   def __init__(self, run_duration=None, gain=None):
+    """Initialize Simulation object
+
+    Args:
+      run_duration: int, simulation duration in seconds
+      gain: float, signal gain for the broadcast by bladeRF board
+    """
     self._run_duration = run_duration
     self._gain = gain
     self._process = None
@@ -106,17 +106,17 @@ class Simulation():
 class StaticSimulation(Simulation):
   """An object for a single GPS Simulation for a static location.
 
-  Attributes:
-    run_duration: int, simulation duration in seconds
-    gain: float, signal gain for the broadcast by bladeRF board
-    process: python subprocess created for the simulation
-    start_time: DateTime object for most recent start time
-    end_time: DateTime object for most recent end time
-    latitude: static location latitude in decimal degrees
-    longitude: static location longitude in decimal degrees
   """
 
   def __init__(self, latitude, longitude, run_duration=None, gain=None):
+    """Initialize Static Simulation.
+
+    Args:
+      run_duration: int, simulation duration in seconds
+      gain: float, signal gain for the broadcast by bladeRF board
+      latitude: float, static location latitude in decimal degrees
+      longitude: float, static location longitude in decimal degrees
+    """
     Simulation.__init__(self, run_duration, gain)
     self._latitude = latitude
     self._longitude = longitude
@@ -136,19 +136,19 @@ class StaticSimulation(Simulation):
 
 
 class DynamicSimulation(Simulation):
-  """An object for a single GPS Simulation for a static location.
+  """An object for a single GPS Simulation for a dynamic route.
 
-  Attributes:
-    run_duration: int, simulation duration in seconds
-    gain: float, signal gain for the broadcast by bladeRF board
-    process: python subprocess created for the simulation
-    start_time: DateTime object for most recent start time
-    end_time: DateTime object for most recent end time
-    file_name: absolute file path to user motion csv file for
-    dynamic route simulation
   """
 
   def __init__(self, file_path, run_duration=None, gain=None):
+    """An object for a single GPS Simulation for a static location.
+
+    Args:
+      run_duration: int, simulation duration in seconds
+      gain: float, signal gain for the broadcast by bladeRF board
+      file_path: absolute file path to user motion csv file for
+      dynamic route simulation
+    """
     Simulation.__init__(self, run_duration, gain)
     self._file_path = file_path
 
@@ -186,13 +186,17 @@ class DynamicSimulation(Simulation):
 class SimulationSet():
   """An object for a set of GPS simulations (that can be dynamic or static).
 
-  Attributes:
-    simulations: list of simulation objects in order of desired execution
-    current_simulation_index: index of currently run simulation object in list
-    log_filename: string for name of file to log into simulation_logs folder
   """
 
   def __init__(self, simulations):
+    """An object for a set of GPS simulations (that can be dynamic or static).
+
+    Set current_simulation_index to None and create unique log file name
+    based on time stamp.
+
+    Args:
+      simulations: list of simulation objects in order of desired execution
+    """
     self._simulations = simulations
     self._current_simulation_index = None
     now = datetime.datetime.utcnow()
@@ -289,13 +293,21 @@ class SimulationSetBuilder():
 
   def add_static_route(self, latitude, longitude, run_duration=None, gain=None):
     """Creates a Static Simulation with correct arguments and adds to list.
+
+    Returns:
+      self object
     """
     self._simulations.append(StaticSimulation(latitude, longitude, run_duration, gain))
+    return self
 
   def add_dynamic_route(self, file_path, run_duration=None, gain=None):
     """Creates a Dynamic Simulation with correct arguments and adds to list.
+
+    Returns:
+      self object
     """
     self._simulations.append(DynamicSimulation(str(file_path), run_duration, gain))
+    return self
 
   def build(self):
     """Build SimulationSet object with list of simulations.
