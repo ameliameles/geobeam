@@ -244,45 +244,29 @@ class SimulationTest(unittest.TestCase):
   def test_create_blade_GPS_process(self, mock_subprocess):
     mock_subprocess.Popen = Mock()
     mock_subprocess.PIPE = Mock()
-    def do_assertions(command, result):
-      mock_subprocess.Popen.assert_called_with(command, stdin=mock_subprocess.PIPE, cwd="./bladeGPS")
-      self.assertEqual(result, mock_subprocess.Popen())
 
-    result = geobeam.simulations.create_bladeGPS_process()
-    command = ["./run_bladerfGPS.sh", "-T", "now"]
-    do_assertions(command,result)
+    commands = [["./run_bladerfGPS.sh", "-T", "now"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-d", "20"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-a", "-2"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-u", "test/path"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", "-a", "-2"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", "-a", "-2", "-l", "27.12345,-37.45678"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", "-a", "-2", "-u", "test/path"],
+                ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", "-a", "-2", "-l", "27.12345,-37.45678"]]
 
-    result = geobeam.simulations.create_bladeGPS_process(run_duration=20)
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20"]
-    do_assertions(command,result)
+    results = [geobeam.simulations.create_bladeGPS_process(),
+               geobeam.simulations.create_bladeGPS_process(run_duration=20),
+               geobeam.simulations.create_bladeGPS_process(gain=-2),
+               geobeam.simulations.create_bladeGPS_process(dynamic_file_path="test/path"),
+               geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2),
+               geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2,
+                                                           location="27.12345,-37.45678"),
+               geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2, 
+                                                           dynamic_file_path="test/path"),
+               geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2,
+                                                           location="27.12345,-37.45678",
+                                                           dynamic_file_path="test/path")]
+    for i in range (len(commands)):
+      self.assertEqual(mock_subprocess.Popen.call_args_list[i][0][0], commands[i])
+      self.assertEqual(results[i], mock_subprocess.Popen())
 
-    result = geobeam.simulations.create_bladeGPS_process(gain=-2)
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-a", "-2"]
-    do_assertions(command,result)
-
-    result = geobeam.simulations.create_bladeGPS_process(dynamic_file_path="test/path")
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-u", "test/path"]
-    do_assertions(command,result)
-
-    result = geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2)
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", "-a", "-2"]
-    do_assertions(command,result)
-
-    result = geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2,
-                                                         location="27.12345,-37.45678")
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20",
-               "-a", "-2", "-l", "27.12345,-37.45678"]
-    do_assertions(command,result)
-
-    result = geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2,
-                                                         dynamic_file_path="test/path")
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20", 
-               "-a", "-2", "-u", "test/path"]
-    do_assertions(command,result)
-
-    result = geobeam.simulations.create_bladeGPS_process(run_duration=20, gain=-2,
-                                                         location="27.12345,-37.45678",
-                                                         dynamic_file_path="test/path")
-    command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20",
-               "-a", "-2", "-l", "27.12345,-37.45678"]
-    do_assertions(command,result)
