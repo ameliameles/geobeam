@@ -286,19 +286,3 @@ class SimulationTest(unittest.TestCase):
     command = ["./run_bladerfGPS.sh", "-T", "now", "-d", "20",
                "-a", "-2", "-l", "27.12345,-37.45678"]
     do_assertions(command,result)
-
-  @patch('geobeam.simulations.KEYBOARD')
-  def test_key_pressed_not_pressed(self, mock_keyboard):
-    mock_keyboard.kbhit.return_value = False
-    mock_keyboard.getch.return_value = 'n'
-    result = geobeam.simulations.key_pressed()
-    self.assertEqual(result, None)
-    mock_keyboard.getch.assert_not_called()
-
-  @patch('geobeam.simulations.KEYBOARD')
-  def test_key_pressed(self, mock_keyboard):
-    mock_keyboard.kbhit.return_value = True
-    mock_keyboard.getch.return_value = 'n'
-    result = geobeam.simulations.key_pressed()
-    self.assertEqual(result, 'n')
-    mock_keyboard.getch.assert_called_once()

@@ -102,6 +102,9 @@ class Simulation():
     log_file_object.write("Start Time: " + self._start_time.strftime("%Y-%m-%d,%H:%M:%S") + "\n")
     log_file_object.write("End Time: " + self._end_time.strftime("%Y-%m-%d,%H:%M:%S") + "\n")
 
+  def __repr__(self):
+    return "Simulation(run_duration=%s, gain=%s)" % (self._run_duration, self._gain)
+
 
 class StaticSimulation(Simulation):
   """An object for a single GPS Simulation for a static location.
@@ -132,7 +135,10 @@ class StaticSimulation(Simulation):
     return
 
   def __repr__(self):
-    return "StaticSimulation(run_duration=%s, gain=%s, latitude=%s, longitude=%s)" % (self._run_duration, self._gain, self._latitude, self._longitude)
+    return "StaticSimulation(latitude=%s, longitude=%s, run_duration=%s, gain=%s)" % (self._latitude,
+                                                                                      self._longitude,
+                                                                                      self._run_duration,
+                                                                                      self._gain)
 
 
 class DynamicSimulation(Simulation):
@@ -180,7 +186,7 @@ class DynamicSimulation(Simulation):
         log_file_object.write(next(route_file))
 
   def __repr__(self):
-    return "DynamicSimulation(run_duration=%s, gain=%s, file_name=%s)" % (self._run_duration, self._gain, self._file_path)
+    return "DynamicSimulation(file_path=%s, run_duration=%s, gain=%s)" % (self._file_path, self._run_duration, self._gain)
 
 
 class SimulationSet():
@@ -215,7 +221,7 @@ class SimulationSet():
     print("------------------------------------------------")
 
     self._switch_simulation(0)
-    while self._current_simulation_index < len(self._simulations):
+    while True:
       current_simulation = self._get_current_simulation()
       simulation_running = current_simulation.is_running()
       key_hit = key_pressed()
