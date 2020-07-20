@@ -50,6 +50,17 @@ class CoordinateConversionTest(unittest.TestCase):
     self.assertAlmostEqual(result[1], y, places=3)
     self.assertAlmostEqual(result[2], z, places=3)
 
+    back_conversion = gps_utils.cartesian_to_geodetic(result[0], result[1], result[2])
+    self.assertAlmostEqual(back_conversion[0], lat, places=5)
+    self.assertAlmostEqual(back_conversion[1], lon, places=5)
+    self.assertAlmostEqual(back_conversion[2], alt, places=3)
+    print(back_conversion[0], lat)
+
+    result = gps_utils.cartesian_to_geodetic(x, y, z)
+    self.assertAlmostEqual(result[0], lat, places=5)
+    self.assertAlmostEqual(result[1], lon, places=5)
+    self.assertAlmostEqual(result[2], alt, places=3)
+
   def test_geodetic_to_cartesian_mountainview(self):
     geodetic_mountainview = (37.4178134, -122.086011, 3.45)
     ecef_mountainview = (-2694180.667, -4297222.330, 3854325.576)

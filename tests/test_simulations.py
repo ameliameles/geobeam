@@ -154,17 +154,22 @@ class SimulationTest(unittest.TestCase):
     result = test_simulation.is_running()
     self.assertFalse(result)
 
-  def test_log_run(self):
+  @patch('geobeam.simulations.csv')
+  def test_log_run(self, mock_csv):
     mock_logfile = Mock()
     mock_logfile.write = Mock()
+
     test_simulation = geobeam.simulations.Simulation(self.run_duration, self.gain)
     test_simulation._start_time = self.start_time
     test_simulation._end_time = self.end_time
     test_simulation.log_run(mock_logfile)
-    calls = [call("\nSimulation(run_duration=%s, gain=%s)\n" % (self.run_duration, self.gain)),
-             call("Start Time: 2020-08-15,05:00:00\n"),
-             call("End Time: 2020-08-15,05:01:10\n")]
-    mock_logfile.write.assert_has_calls(calls)
+
+    mock_logfile.write.assert_called_once_with('\n')
+    mock_csv.writer.assert_called_once()
+    fields = ["simulation_type", "run_duration", "gain", "start_time", "end_time"]
+    values = ["Simulation", self.run_duration, self.gain, "2020-08-15T05:00:00", "2020-08-15T05:01:10"]
+    csv_calls = [call(fields), call(values)]
+    mock_csv.writer().writerow.assert_has_calls(csv_calls)
 
   @patch('geobeam.simulations.datetime.datetime')
   @patch('geobeam.simulations.create_bladeGPS_process')
@@ -180,8 +185,9 @@ class SimulationTest(unittest.TestCase):
     mock_create_bladeGPS_process.assert_called_once_with(run_duration=self.run_duration,
                                                          gain=self.gain,
                                                          location=self.location)
-
-  def test_log_static_run(self):
+  
+  @patch('geobeam.simulations.csv')
+  def test_log_static_run(self, mock_csv):
     mock_logfile = Mock()
     mock_logfile.write = Mock()
     test_simulation = geobeam.simulations.StaticSimulation(self.latitude,
@@ -191,13 +197,13 @@ class SimulationTest(unittest.TestCase):
     test_simulation._start_time = self.start_time
     test_simulation._end_time = self.end_time
     test_simulation.log_run(mock_logfile)
-    calls = [call("\nStaticSimulation(latitude=%s, longitude=%s, run_duration=%s, gain=%s)\n" % (self.latitude,
-                                                                                                 self.longitude,
-                                                                                                 self.run_duration,
-                                                                                                 self.gain)),
-             call("Start Time: 2020-08-15,05:00:00\n"),
-             call("End Time: 2020-08-15,05:01:10\n")]
-    mock_logfile.write.assert_has_calls(calls)
+
+    mock_logfile.write.assert_called_once_with('\n')
+    mock_csv.writer.assert_called_once()
+    fields = ["simulation_type", "latitude", "longitude", "run_duration", "gain", "start_time", "end_time"]
+    values = ["StaticSimulation", self.latitude, self.longitude, self.run_duration, self.gain, "2020-08-15T05:00:00", "2020-08-15T05:01:10"]
+    csv_calls = [call(fields), call(values)]
+    mock_csv.writer().writerow.assert_has_calls(csv_calls)
 
   @patch('geobeam.simulations.datetime.datetime')
   @patch('geobeam.simulations.create_bladeGPS_process')
@@ -212,8 +218,9 @@ class SimulationTest(unittest.TestCase):
     mock_create_bladeGPS_process.assert_called_once_with(run_duration=self.run_duration,
                                                          gain=self.gain,
                                                          dynamic_file_path=self.file_path)
-
-  def test_log_dynamic_run(self):
+  
+  @patch('geobeam.simulations.csv')
+  def test_log_dynamic_run(self, mock_csv):
     mock_logfile = Mock()
     mock_logfile.write = Mock()
     test_simulation = geobeam.simulations.DynamicSimulation(self.file_path,
@@ -228,17 +235,18 @@ class SimulationTest(unittest.TestCase):
     with patch("geobeam.simulations.open", open_mock, create=True):
       open_mock.return_value = MagicMock()
       test_simulation.log_run(mock_logfile)
+
+    mock_csv.writer.assert_called_once()
+    fields = ["simulation_type", "file_path", "run_duration", "gain", "start_time", "end_time"]
+    values = ["DynamicSimulation", self.file_path, self.run_duration, self.gain, "2020-08-15T05:00:00", "2020-08-15T05:00:10"]
+    gps_fields = ["time_from_zero", "x", "y", "z"]
+    csv_calls = [call(fields), call(values), call(gps_fields)]
+    mock_csv.writer().writerow.assert_has_calls(csv_calls)
+
     open_mock.assert_called_with(self.file_path, "r")
-    calls = [call("\nDynamicSimulation(file_path=%s, run_duration=%s, gain=%s)\n" % (self.file_path,
-                                                                                     self.run_duration,
-                                                                                     self.gain)),
-             call("Start Time: 2020-08-15,05:00:00\n"),
-             call("End Time: 2020-08-15,05:00:10\n")]
-    self.assertEqual(mock_logfile.write.call_args_list[0], calls[0])
-    self.assertEqual(mock_logfile.write.call_args_list[1], calls[1])
-    self.assertEqual(mock_logfile.write.call_args_list[2], calls[2])
-    # check for 3 header calls and 100 copied lines for 10 seconds of data
-    self.assertEqual(mock_logfile.write.call_count,103)
+    self.assertEqual(mock_logfile.write.call_args_list[0], call('\n'))
+    # check for 1 blank line call and 100 copied lines for 10 seconds of data
+    self.assertEqual(mock_logfile.write.call_count,101)
 
   @patch('geobeam.simulations.subprocess')
   def test_create_blade_GPS_process(self, mock_subprocess):
