@@ -218,7 +218,11 @@ class DynamicSimulation(Simulation):
     with open(route_file_path, "r") as route_file:
       lines_to_read = int(total_time*10)  # 10 points per second
       for _ in range(lines_to_read):
-        log_file_object.write(next(route_file))
+        try:
+          log_file_object.write(next(route_file))
+        except StopIteration:
+          # reached end of source file
+          break
 
   def __repr__(self):
     return "DynamicSimulation(file_path=%s, run_duration=%s, gain=%s)" % (self._file_path, self._run_duration, self._gain)
@@ -241,7 +245,7 @@ class SimulationSet():
     self._simulations = simulations
     self._current_simulation_index = None
     now = datetime.datetime.utcnow()
-    self._log_filename = now.strftime("GPSSIM-%Y-%m-%d_%H:%M:%S")
+    self._log_filename = now.strftime("GPSSIM-%Y-%m-%d_%H:%M:%S.csv")
 
   def run_simulations(self):
     """Starts simulations and navigates through according to user key press.

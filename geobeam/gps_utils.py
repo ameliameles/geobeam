@@ -97,9 +97,11 @@ def cartesian_to_geodetic(x, y, z):
     z: float, z coordinate
   Returns:
     A tuple of (latitude, longitude, altitude) with latitude and longitude
-    as floats in Decimal Degrees and altitiude as a float in meters
+    as floats in Decimal Degrees and altitiude as a float in meters. If there
+    is no valid lat/lon/alt for the given xyz vector, a vector 
+    of (0.0, 0.0, -6378137.0) is returned
   """
-  eps = 1.0 * 10**-3  # convergence criteria
+  eps = 1E-3 # convergence criteria
   eccentricity_sq = _WGS84_ECCENTRICITY**2
 
   norm_vector = math.sqrt(x*x+y*y+z*z)
