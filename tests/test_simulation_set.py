@@ -33,7 +33,7 @@ class SimulationSetRunTests(unittest.TestCase):
 
     self.simulation_set = geobeam.simulations.SimulationSet(self.simulations)
 
-    self.assertEqual(self.simulation_set._log_filename, "GPSSIM-2020-08-15_05:00:00.csv")
+    self.assertEqual(self.simulation_set._log_filename, "GPSSIM-2020-08-15_05-00-00.csv")
 
   @patch('geobeam.simulations.SimulationSet._get_current_simulation')
   @patch('geobeam.simulations.SimulationSet._log_current_simulation')
@@ -139,7 +139,7 @@ class SimulationSetTest(unittest.TestCase):
       simulation_set._log_current_simulation()
 
     self.simulations[1].log_run.assert_called_once()
-    open_mock.assert_called_with("simulation_logs/GPSSIM-2020-08-15_05:00:00.csv", "a")
+    open_mock.assert_called_with("simulation_logs/GPSSIM-2020-08-15_05-00-00.csv", "a")
 
   @patch('geobeam.simulations.SimulationSet._get_current_simulation')
   @patch('geobeam.simulations.SimulationSet._log_current_simulation')

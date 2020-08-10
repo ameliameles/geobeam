@@ -5,7 +5,7 @@ import os
 import sys
 
 from geobeam.simulations import SimulationSetBuilder
-from geobeam import generate_route
+from geobeam.generate_route import TimedRoute
 from geobeam import gps_utils
 
 DEFAULT_SPEED = 1.4  # meters/sec
@@ -42,16 +42,20 @@ def main(config_file_name):
 
         # Creating New Route File
         if config.getboolean(simulation, "CreateFile"):
-          start_latitude = config.getfloat(simulation, "StartLatitude")
-          start_longitude = config.getfloat(simulation, "StartLongitude")
-          end_latitude = config.getfloat(simulation, "EndLatitude")
-          end_longitude = config.getfloat(simulation, "EndLongitude")
-          location1 = gps_utils.Location(start_latitude, start_longitude)
-          location2 = gps_utils.Location(end_latitude, end_longitude)
-
           speed = config.getfloat(simulation, "Speed")
           frequency = config.getint(simulation, "Frequency")
-          user_motion = generate_route.TimedRoute(location1, location2, speed, frequency)
+          if config.has_option(simulation, "GpxSourcePath"):
+            gpx_source_path = config.get(simulation, "GpxSourcePath")
+            user_motion = TimedRoute.from_gpx(gpx_source_path, speed, frequency)
+          else:
+            start_latitude = config.getfloat(simulation, "StartLatitude")
+            start_longitude = config.getfloat(simulation, "StartLongitude")
+            end_latitude = config.getfloat(simulation, "EndLatitude")
+            end_longitude = config.getfloat(simulation, "EndLongitude")
+            location1 = gps_utils.Location(start_latitude, start_longitude)
+            location2 = gps_utils.Location(end_latitude, end_longitude)
+
+            user_motion = TimedRoute.from_start_and_end(location1, location2, speed, frequency)
           user_motion.write_route(file_name)
 
         simulation_set_builder.add_dynamic_route(file_path,

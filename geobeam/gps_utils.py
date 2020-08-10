@@ -17,6 +17,8 @@
 
 import math
 
+from geopy import distance
+
 # World Geodetic System defined constants
 _WGS84_EARTH_RADIUS = 6378137.0
 _WGS84_ECCENTRICITY = 0.0818191908426
@@ -129,3 +131,14 @@ def cartesian_to_geodetic(x, y, z):
   altitude = nh - n
 
   return (latitude, longitude, altitude)
+
+def calculate_distance(location1, location2):
+  """Calculate geodesic distance between two coordinates with ellipsoidal earth model.
+
+  Args:
+    location1: Location object
+    location2: Location object
+  Returns:
+    A float in meters of the distance between the two points
+  """
+  return distance.geodesic(location1, location2).meters
