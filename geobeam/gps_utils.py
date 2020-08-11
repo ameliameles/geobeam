@@ -136,8 +136,8 @@ def calculate_distance(location1, location2):
   """Calculate geodesic distance between two coordinates with ellipsoidal earth model.
 
   Args:
-    location1: Location object
-    location2: Location object
+    location1: tuple of (latitude, longitude) as floats in Decimal Degrees
+    location2: tuple of (latitude, longitude) as floats in Decimal Degrees
   Returns:
     A float in meters of the distance between the two points
   """

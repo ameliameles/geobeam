@@ -40,8 +40,6 @@ class Route():
   """An object for a route based on the input of a start and ending location.
 
   Attributes:
-    start_location: a Location object for the start of the route
-    end_location: a Location object for the end of the route
     route: a list of Location objects for each point on the route
     distances: a list of distances between each pair of consecutive
     locations in meters
@@ -50,8 +48,6 @@ class Route():
   def __init__(self, route, distances):
     self.route = route
     self.distances = distances
-    self.start_location = route[0]
-    self.end_location = route[-1]
 
   @classmethod
   def from_start_and_end(cls, start_location, end_location):
@@ -143,8 +139,6 @@ class TimedRoute(Route):
   """An object for a route that has a desired speed and point frequency.
 
   Attributes:
-    start_location: a Location object for the start of the route
-    end_location: a Location object for the end of the route
     speed: how fast the person moves through the route in meters/second
     frequency: how many points per second the timed route should have (Hz)
     route: a list of Location objects for each point on the route

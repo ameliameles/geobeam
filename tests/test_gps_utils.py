@@ -87,5 +87,23 @@ class CoordinateConversionTest(unittest.TestCase):
 
     self.coordinate_assertions(geodetic_shanghai, ecef_shanghai)
 
+class CalculateDistanceTest(unittest.TestCase):
+
+  def test_calculate_zero_distance(self):
+    coordinate_1 = (37.1111, -122.1124)
+    coordinate_2 = (37.1111, -122.1124)
+
+    result = gps_utils.calculate_distance(coordinate_1, coordinate_2)
+
+    self.assertAlmostEqual(result, 0.0, places=8)
+
+  def test_calculate_distance(self):
+    coordinate_1 = (37.1111, -122.1124)
+    coordinate_2 = (37.1112, -122.1125)
+
+    result = gps_utils.calculate_distance(coordinate_1, coordinate_2)
+
+    self.assertAlmostEqual(result, 14.2184735, places=3)
+
 if __name__ == '__main__':
     unittest.main()

@@ -42,9 +42,6 @@ class GpxFileParser:
               
           root = gpx_tree.getroot()
 
-          # Create the gpx gpsmetadata
-          #gpx_metadata = self.parse_gpx_metadata(root, PREFIX_URL)
-
           # parse to get list of gps location points
           gpx_points = self.parse_gpx_trkpts(root, PREFIX_URL)
 
@@ -58,47 +55,12 @@ class GpxFileParser:
         """
         Get the file type
         """
-        file_type = os.path.splitext(file_path)[1]
-
-        if file_type is None:
-            print("File has no extension")
+        if file_path:
+            file_type = os.path.splitext(file_path)[1]
+        else:
             return None
 
         return file_type
-
-    def parse_gpx_metadata(self, root, prefix):
-        """
-        Helper function to parse metadata information in xml file
-        """
-        # Get metadata information
-        metadata = root.find(prefix + 'metadata')
-        if metadata is None:
-            print('Metadata is None, could not be parsed.')
-            return None
-
-
-        # Parse metadata information
-        device, identifier, manufacturer, model = "", "", "", ""
-        tz_starttime = None
-
-        for data in metadata.iter():
-            if data.tag == prefix + 'device':
-                device = data.text
-            elif data.tag == prefix + 'id':
-                identifier = data.text
-            elif data.tag == prefix + 'manufacturer':
-                manufacturer = data.text
-            elif data.tag == prefix + 'model':
-                model = data.text
-            elif data.tag == prefix + 'time':
-                tz_starttime = self.parse_time(data.text)
-
-        # Parse end timestamp
-        endtimestr = root.find(prefix + 'time').text
-        tz_endtime = self.parse_time(endtimestr)
-
-        #return GpsMetaData(device, identifier, manufacturer, model, tz_starttime, tz_endtime)
-
 
     def parse_gpx_trkpts(self, root, prefix) -> []:
         """
