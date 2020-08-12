@@ -20,6 +20,7 @@ class GpxFileParserTest(unittest.TestCase):
   def test_parse_gpx_success(self):
     expected_points = [(63.17964, -174.12954, 4.91),
                        (63.17965, -174.12955, 4.91)]
+                       
     result = self.fileparser.parse_file('tests/test_gpx_file.gpx')
 
     self.assertEqual(expected_points, result)
@@ -27,6 +28,7 @@ class GpxFileParserTest(unittest.TestCase):
   def test_parse_gpx_no_altitude(self):
     expected_points = [(63.17964, -174.12954, 0),
                        (63.17965, -174.12955, 0)]
+
     result = self.fileparser.parse_file('tests/test_gpx_file_no_alt.gpx')
 
     self.assertEqual(expected_points, result)

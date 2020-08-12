@@ -18,89 +18,97 @@ import os
 
 import xml.etree.ElementTree as ET
 
-#prefix url in xml file
+# prefix url in xml file
 PREFIX_URL = "{http://www.topografix.com/GPX/1/1}"
 
-class GpxFileParser: 
 
-    #TODO: TBD(@lynnzl) replace with variable file path
-    def parse_file(self, file_path):
-        """
-        Traverses the xml tree and extract all the needed datafields for analysis
+class GpxFileParser:
 
-        Args:
-          filename: name of the xml file
+  def parse_file(self, file_path):
+    """Traverses the xml tree and extracts GPX trackpoints.
 
-        Returns:
-          a GpsDataSet
-        """
-        file_type = self._get_file_type(file_path)
-        
-        if file_type == ".xml" or file_type == ".gpx":
-          with open(file_path, 'r') as gpx_file:
-              gpx_tree = ET.parse(gpx_file)
-              
-          root = gpx_tree.getroot()
+    Args:
+      file_path: name of the xml/gpx file
 
-          # parse to get list of gps location points
-          gpx_points = self.parse_gpx_trkpts(root, PREFIX_URL)
+    Returns:
+      a list of (lat, lon, alt) tuples extracted from Gpx file
+    """
+    file_type = self._get_file_type(file_path)
 
-          return gpx_points
+    if file_type == ".xml" or file_type == ".gpx":
+      with open(file_path, "r") as gpx_file:
+        gpx_tree = ET.parse(gpx_file)
 
-        else:
-            print('Invalid file type. Accepted: xml, gpx. Received: ' + file_type)
-            return None
+      root = gpx_tree.getroot()
 
-    def _get_file_type(self, file_path):
-        """
-        Get the file type
-        """
-        if file_path:
-            file_type = os.path.splitext(file_path)[1]
-        else:
-            return None
+      # parse to get list of gps location points
+      gpx_points = self._parse_gpx_trkpts(root, PREFIX_URL)
 
-        return file_type
+      return gpx_points
 
-    def parse_gpx_trkpts(self, root, prefix) -> []:
-        """
-        Helper function to parse trkpts in xml file
-        """
-        gpx_points = []
+    else:
+      print("Invalid file type. Accepted: xml, gpx. Received: " + file_type)
+      return None
 
-        trk = root.find(prefix + 'trk')
-        if trk is None:
-            print('trk is None, could not parse trkpts.')
-            return None
+  def _get_file_type(self, file_path):
+    """Get the file type (extension).
 
-        trkseg = trk.find(prefix + 'trkseg')
-        if trkseg is None:
-            print('trkseg is None, could not parse trkpts.')
-            return None
+    Args:
+      file_path: name of the xml/gpx file
 
-        if len(trkseg) == 0:
-            print('trkseg is empty, could not parse trkpts.')
-            return None
+    Returns:
+      string, file extension
+    """
+    if file_path:
+      file_type = os.path.splitext(file_path)[1]
+    else:
+      return None
 
-        # Get the start location
-        first_trkpt = trkseg[0]
-        prev_altitude = 0
+    return file_type
 
-        # Get every track point information
-        for trkpt in trkseg:
-            # Get the latitude and longitude
-            lat = float(trkpt.get('lat'))
-            lon = float(trkpt.get('lon'))
+  def _parse_gpx_trkpts(self, root, prefix) -> []:
+    """Helper function to parse trkpts in gpx file.
 
-            # if no altitude value, make it same as previous point's altitude
-            altitude = prev_altitude
+    Args:
+      root: root of xml tree
+      prefix: string, prefix url
 
-            for data in trkpt.iter():
-               if data.tag == prefix + 'ele':
-                  altitude = float(data.text)
-                  prev_altitude = altitude
+    Returns:
+      a list of (lat, lon, alt) tuples extracted from Gpx file
+    """
+    gpx_points = []
 
-            current_location = (lat, lon, altitude)
-            gpx_points.append(current_location)
+    trk = root.find(prefix + "trk")
+    if trk is None:
+      print("trk is None, could not parse trkpts.")
+      return None
 
-        return gpx_points
+    trkseg = trk.find(prefix + "trkseg")
+    if trkseg is None:
+      print("trkseg is None, could not parse trkpts.")
+      return None
+
+    if len(trkseg) == 0:
+      print("trkseg is empty, could not parse trkpts.")
+      return None
+
+    prev_altitude = 0
+
+    # Get every track point information
+    for trkpt in trkseg:
+      # Get the latitude and longitude
+      lat = float(trkpt.get("lat"))
+      lon = float(trkpt.get("lon"))
+
+      # if no altitude value, make it same as previous point's altitude
+      altitude = prev_altitude
+
+      for data in trkpt.iter():
+        if data.tag == prefix + "ele":
+          altitude = float(data.text)
+          prev_altitude = altitude
+
+      current_location = (lat, lon, altitude)
+      gpx_points.append(current_location)
+
+    return gpx_points

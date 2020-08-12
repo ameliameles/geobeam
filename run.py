@@ -8,8 +8,9 @@ from geobeam.simulations import SimulationSetBuilder
 from geobeam.generate_route import TimedRoute
 from geobeam import gps_utils
 
-DEFAULT_SPEED = 1.4  # meters/sec
-DEFAULT_FREQUENCY = 10  # Hz
+# used as default config parser values if not specified by the user
+DEFAULT_SPEED = "1.4"  # meters/sec
+DEFAULT_FREQUENCY = "10"  # Hz
 
 
 def main(config_file_name):
@@ -20,8 +21,8 @@ def main(config_file_name):
     to read from
   """
   config = configparser.ConfigParser()
-  config['DEFAULT']['Speed'] = str(DEFAULT_SPEED)
-  config['DEFAULT']['Frequency'] = str(DEFAULT_FREQUENCY)
+  config['DEFAULT']['Speed'] = DEFAULT_SPEED
+  config['DEFAULT']['Frequency'] = DEFAULT_FREQUENCY
   config_file_path = os.path.abspath("simulation_configs/" + config_file_name)
   config.read(config_file_path)
 

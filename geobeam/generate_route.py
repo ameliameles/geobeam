@@ -28,13 +28,14 @@ speeds (walking, running, biking)
 
 import csv
 
-from geobeam.gpx_parser import GpxFileParser
-from geobeam.gps_utils import Location
 from geobeam.gps_utils import calculate_distance
+from geobeam.gps_utils import Location
+from geobeam.gpx_parser import GpxFileParser
 from geobeam.map_requests import request_directions
 from geobeam.map_requests import request_elevations
 
 FILE_FOLDER_PATH = "geobeam/user_motion_files/"
+
 
 class Route():
   """An object for a route based on the input of a start and ending location.
@@ -60,7 +61,8 @@ class Route():
     Returns:
       initialized Route object
     """
-    route, distances = cls._generate_route_from_start_and_end(start_location, end_location)    
+    route, distances = cls._generate_route_from_start_and_end(start_location,
+                                                              end_location)
     return cls(route, distances)
 
   @classmethod
@@ -77,7 +79,7 @@ class Route():
     return cls(route, distances)
 
   def _generate_route_from_start_and_end(start_location, end_location):
-    """Create a route by requesting from Maps API and then adding altitudes/xyz to each point.
+    """Create a route by requesting from Maps API and then adding altitudes/xyz.
 
     sets attributes for the class based on API response and then calls
     add_altitudes() to request elevation data for each point, and then add xyz
@@ -164,7 +166,8 @@ class TimedRoute(Route):
     Returns:
       initialized and upsampled TimedRoute object
     """
-    route, distances = cls._generate_route_from_start_and_end(start_location, end_location)    
+    route, distances = cls._generate_route_from_start_and_end(start_location,
+                                                              end_location)
     timed_route = cls(route, distances, speed, frequency)
     timed_route.upsample_route()
     return timed_route
@@ -181,7 +184,7 @@ class TimedRoute(Route):
     Returns:
       initialized and upsampled TimedRoute object
     """
-    route, distances = cls._generate_route_from_gpx(gpx_source_path)    
+    route, distances = cls._generate_route_from_gpx(gpx_source_path)
     timed_route = cls(route, distances, speed, frequency)
     timed_route.upsample_route()
     return timed_route
