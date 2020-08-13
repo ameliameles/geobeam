@@ -86,6 +86,8 @@ This configuration file has, in order:
 * a Static Simulation of the point (40.731278, -73.999541)
 * a Dynamic Simulation using a newly created dynamic route that was created from points extracted from the user provided sample_run.gpx GPX file
 
+All route files are created with a default frequency of 10 Hz to match the simulator input format.
+
 **Common Configuration Properties:**
 * _Dynamic_: True if Dynamic Simulation, False if Static
 * _Gain_: integer for broadcast signal gain value
@@ -95,7 +97,6 @@ This configuration file has, in order:
 * _CreateFile_: True if creating new route file, False if using route file that has already been created
 * _FileName_: name of route file to be saved or used
 * _Speed_: speed with which the newly created route is traversed in meters/second
-* _Frequency_: sampling rate of points in Hz with which to create the route file, defaults to 10 Hz which is the simulator’s input frequency
 * If creating route from two endpoints (all floats in decimal degrees):
   * _StartLatitude_
   * _StartLongitude_
@@ -128,13 +129,15 @@ You can replace with the desired route from start and endpoints or from GPX:
 ```
 location1 = Location(40.794195, -73.963177)
 location2 = Location(40.731278, -73.999541)
-  
+
+# arguments: start location, end location, speed in m/s, frequency (simulator uses 10 Hz)
 user_motion = TimedRoute.from_start_and_end(location1, location2, 1.4, TEN_HZ)
 user_motion.write_route("sample_walking.csv")
 
 user_motion = TimedRoute.from_start_and_end(location1, location2, 2.7, TEN_HZ)
 user_motion.write_route("sample_running.csv")
 
+# arguments: path to gpx file, speed in m/s, frequency (simulator uses 10 Hz)
 user_motion = TimedRoute.from_gpx("/path/to/gpx/sample_file.gpx", 2.7, TEN_HZ)
 user_motion.write_route("sample_running_from_gpx.csv")
 ```

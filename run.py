@@ -8,9 +8,9 @@ from geobeam.simulations import SimulationSetBuilder
 from geobeam.generate_route import TimedRoute
 from geobeam import gps_utils
 
-# used as default config parser values if not specified by the user
+# speed used as default config parser value if not specified by the user
 DEFAULT_SPEED = "1.4"  # meters/sec
-DEFAULT_FREQUENCY = "10"  # Hz
+DEFAULT_FREQUENCY = 10  # Hz
 
 
 def main(config_file_name):
@@ -22,7 +22,6 @@ def main(config_file_name):
   """
   config = configparser.ConfigParser()
   config['DEFAULT']['Speed'] = DEFAULT_SPEED
-  config['DEFAULT']['Frequency'] = DEFAULT_FREQUENCY
   config_file_path = os.path.abspath("simulation_configs/" + config_file_name)
   config.read(config_file_path)
 
@@ -44,7 +43,7 @@ def main(config_file_name):
         # Creating New Route File
         if config.getboolean(simulation, "CreateFile"):
           speed = config.getfloat(simulation, "Speed")
-          frequency = config.getint(simulation, "Frequency")
+          frequency = DEFAULT_FREQUENCY
           if config.has_option(simulation, "GpxSourcePath"):
             gpx_source_path = config.get(simulation, "GpxSourcePath")
             user_motion = TimedRoute.from_gpx(gpx_source_path, speed, frequency)

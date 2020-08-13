@@ -27,6 +27,7 @@ speeds (walking, running, biking)
 """
 
 import csv
+import os
 
 from geobeam.gps_utils import calculate_distance
 from geobeam.gps_utils import Location
@@ -242,5 +243,7 @@ class TimedRoute(Route):
 
 
 def _write_to_csv(file_name, value_array):
+  if not os.path.exists(FILE_FOLDER_PATH):
+    os.makedirs(FILE_FOLDER_PATH)
   with open(file_name, "w") as csv_file:
     csv.writer(csv_file).writerows(value_array)
